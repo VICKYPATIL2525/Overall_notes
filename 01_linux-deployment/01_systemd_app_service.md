@@ -85,12 +85,12 @@ WantedBy=multi-user.target
 
 **Example — Streamlit app:**
 ```ini
-ExecStart=/home/ubuntu/myproject/myenv/bin/streamlit run app.py --server.port 8000 --server.address 0.0.0.0
+ExecStart=/home/ubuntu/myproject/myenv/bin/streamlit run app.py --server.port 8085 --server.address 0.0.0.0
 ```
 
 **Example — FastAPI app:**
 ```ini
-ExecStart=/home/ubuntu/myproject/myenv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+ExecStart=/home/ubuntu/myproject/myenv/bin/uvicorn main:app --host 0.0.0.0 --port 8085
 ```
 
 Save and exit: `Ctrl + X` → `Y` → `Enter`
@@ -158,10 +158,10 @@ Without this step the app will not start automatically after a server reboot. Ru
 ### Step 8 — Access the App
 
 ```
-http://<server-ip>:<your-port>
+http://<server-ip>:8085
 ```
 
-At this point your app is accessible via the port you set in `ExecStart` (e.g. `8000`). Users will need to type the port in the URL.
+At this point your app is accessible via the port you set in `ExecStart` (e.g. `8085`). Users will need to type the port in the URL.
 
 > To remove the port from the URL and serve on clean `http://your-ip`, set up Nginx as a reverse proxy — see [02_nginx_setup.md](02_nginx_setup.md) and [03_nginx_reverse_proxy.md](03_nginx_reverse_proxy.md).
 
