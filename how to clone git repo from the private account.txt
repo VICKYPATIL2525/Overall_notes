@@ -1,0 +1,16 @@
+How to clone main branch or repo
+git clone https://vicky-patil_incrp:ghp_EXAMPLE_TOKEN__D6uhNj4y35bb3tUF1IGJbQ3SI64N@github.com/Inadev-Data-Lab/QA_AI_Accelerator.git
+
+how to clone branch
+git clone -b branch-name https://vicky-patil_incrp:YOUR_TOKEN@github.com/Inadev-Data-Lab/QA_AI_Accelerator.git
+
+Steps
+--go to to the repo
+--go the settings
+--find developer option at the last it is present
+--personal access token
+--generate classis token
+--copy that token
+-- authoreize if needed and option is present there
+-- we are good to go 
+git clone -b initial-setup https://vicky-patil_incrp:ghp_EXAMPLE_TOKEN_tyeX61NJB8zf5hdYPke5I2efGlT@github.com/Inadev-Data-Lab/QA_AI_Accelerator.git
