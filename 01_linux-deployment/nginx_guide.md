@@ -229,52 +229,134 @@ This means you can have 10 site configs written but only 3 active — clean and 
 
 ### The Site Config File — Accepting Traffic and Routing It
 
-When you create a file in `sites-available/` (name it anything — `myapp`, `streamlit`, etc.), you write a **server block** inside it:
+This is the most important part. This file is where you tell Nginx:
+- **Which port to listen on** (where traffic comes IN from the internet)
+- **Where to send that traffic** (which internal port your app is running on)
+
+---
+
+#### Step 1 — Create the Config File
+
+```bash
+sudo nano /etc/nginx/sites-available/myapp
+```
+
+This opens a blank file in the editor. You can name it anything — `myapp`, `streamlit`, `chatbot`, etc. The name is just a label for you to identify it.
+
+---
+
+#### Step 2 — Write the Server Block
+
+Paste this inside the file:
 
 ```nginx
 server {
-    listen 80;                          # accept traffic coming IN on port 80
 
-    server_name your-ip-or-domain;     # which IP/domain to match
+    listen 80;
+
+    server_name your-ip-or-domain;
 
     location / {
-        proxy_pass http://localhost:8501;   # route it TO your app internally
+        proxy_pass http://localhost:8501;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
+
 }
 ```
 
-The two key lines:
+Save and exit: press `Ctrl + X`, then `Y`, then `Enter`.
 
-| Line | What it does |
-|---|---|
-| `listen 80` | Nginx sits on port 80, waiting for incoming traffic from the internet |
-| `proxy_pass http://localhost:8501` | Forwards that traffic internally to your app running on port 8501 |
+---
 
-So the full flow becomes:
+#### What Each Line Does
+
+**`listen 80;`**
+- Port 80 is the default HTTP port — the one browsers use automatically when you type just `http://your-ip`
+- This line tells Nginx: "sit here and wait for anyone connecting on port 80"
+- Traffic from the internet arrives HERE first
+
+**`server_name your-ip-or-domain;`**
+- Replace this with your actual EC2 elastic IP (e.g. `54.123.45.67`) or your domain (e.g. `app.mysite.com`)
+- If you have multiple server blocks for different apps, Nginx uses this to decide which block handles which request
+- For a single app, you can also just put `_` here as a catch-all
+
+**`location / { ... }`**
+- The `/` means "match ALL incoming URLs" — anything the user types after your IP goes in here
+- Everything inside the `{ }` is what Nginx does with that request
+
+**`proxy_pass http://localhost:8501;`**
+- This is the routing line — it takes the request that came in on port 80 and forwards it to port 8501 on the same server
+- `localhost` means "this same machine" — your Streamlit app is running there internally
+- The user never sees port 8501 — they only ever talk to Nginx on port 80
+
+**`proxy_set_header` lines**
+- These pass extra information to your app so it knows the real IP of the user who made the request
+- Without these, your app would think every request came from Nginx itself, not the actual user
+
+---
+
+#### The Full Picture
 
 ```
-Internet → port 80 → Nginx (reads this file) → port 8501 → Your App
+User types http://54.123.45.67 in browser
+        ↓
+    Port 80 (internet-facing)
+        ↓
+      Nginx reads this config file
+        ↓
+    proxy_pass → Port 8501 (internal, not exposed)
+        ↓
+    Your Streamlit App responds
+        ↓
+    Nginx sends the response back to the user
 ```
 
-### Your Workflow Every Time You Add a New App
+---
+
+#### Step 3 — Enable the Config
+
+Writing the file is not enough — you need to activate it by creating a symlink into `sites-enabled/`:
 
 ```bash
-# 1. Create the config file
-sudo nano /etc/nginx/sites-available/myapp
-
-# 2. Write the server block inside it (see above)
-
-# 3. Enable it
 sudo ln -s /etc/nginx/sites-available/myapp /etc/nginx/sites-enabled/
+```
 
-# 4. Test the config for syntax errors
+Think of this as: "I wrote the rule in `sites-available`, now I'm switching it ON by linking it into `sites-enabled`."
+
+---
+
+#### Step 4 — Test for Errors
+
+Before reloading, always check your config for typos:
+
+```bash
 sudo nginx -t
+```
 
-# 5. Reload Nginx (zero downtime)
+You should see:
+
+```
+nginx: configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+```
+
+If it says `failed` — there's a typo in your server block. Fix it before moving on.
+
+---
+
+#### Step 5 — Reload Nginx
+
+```bash
 sudo systemctl reload nginx
 ```
 
-> Without step 3, your config file does nothing — Nginx never sees it.
+This applies the new config without restarting Nginx — zero downtime. Your app stays live while the new routing rules take effect.
+
+---
+
+> **Key rule:** Without the symlink in Step 3, the config file does absolutely nothing — Nginx never reads it.
 
 ---
 
